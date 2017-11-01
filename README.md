@@ -24,8 +24,8 @@ To extract feature from raw sensor data, we have applied certain transformation 
 3. Energy/Power of Signal
 4. Statistical Features like mean,std,max,min
 
-<img align="right" src="/imag/entropyOriZ.jpg?raw=true"> 
-<img align="left" src="/imag/powerFFTAccX.jpg?raw=true"> 
+<img align="right" src="/img/entropyOriZ.jpg?raw=true"> 
+<img align="left" src="/img/powerFFTAccX.jpg?raw=true"> 
 
 ## Phase 4 - Designing Classifier
 
