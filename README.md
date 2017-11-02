@@ -16,7 +16,7 @@ While start eating eating we did a unique gesture that can be easily identified 
 ## Phase 2 - Data annotation
 In this phase we have annotated the collected raw data as eating or non-eating with the help of video recording. We have annoted frame numbers as starting of eating activity and ending of eating activity. We captured all these frames numbers in Annotation.txt   
 
-## Phase 3 - Feature Extraction
+## Phase 3 - Feature Extraction and Dimentionality Reduction
 To extract feature from raw sensor data, we have applied certain transformation on raw data & plotted graph of eating and non-eating actions. The transformations which give clear distinction between eating and non-eating actions are selected as features. We have applied following methodologies to extract the features
 
 1. Root Mean Square (R.M.S)
@@ -29,4 +29,8 @@ To extract feature from raw sensor data, we have applied certain transformation 
 
 ## Phase 4 - Designing Classifier
 
+TODO
+
 ## Phase 5 - Performance & Accuracy
+
+TODO
