@@ -34,3 +34,16 @@ TODO
 ## Phase 5 - Performance & Accuracy
 
 TODO
+
+
+## Authors
+* Prashant Gonarkar (pgonarka@asu.edu) 
+* Tanmay Manolkar (tmanolka@asu.edu)
+* Pooja Koasla (pkosala@asu.edu)
+* Shubham Pathak (spathak6@asu.edu)
+
+## License
+This project is licensed under the MIT License - see the LICENSE.md file for details
+
+## Acknowledgments 
+*  [Prof. Ayan Banerjee](http://impact.asu.edu/ayan/)
