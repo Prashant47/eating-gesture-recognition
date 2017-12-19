@@ -1,13 +1,15 @@
-% DataGeeks Group 
+% DataGeeks Group Assignement-3
 %
 clear;
 close;
 
 summaryData = csvread('data/summary.csv');
-
+%summaryData = csvread('data/backup.txt');
+group_id_mapping = csvread('data/group_id_mapping.csv');
 fileNames = summaryData(:,2);
 totalFrameNumbers = summaryData(:,3);
 [row,col] = size(summaryData);
+Matrix =[];
 
 for index =  1:row
 
@@ -22,7 +24,6 @@ for index =  1:row
     IMUTime = imudata(:,1);
     EMGTime = emgdata(:,1);
 
-    % Normalizing and Interpolating the raw sensor data
     OriXData = imudata(:,2);
     OriXDataNorm = ( OriXData  - min( OriXData  ) ) / ( max(OriXData) - min(OriXData) );
     InterpolatedOriXData = interp1(IMUTime , OriXDataNorm, saveTimeLine, 'spline');
@@ -128,33 +129,34 @@ for index =  1:row
     data = vertcat(InterpolatedOriXData,InterpolatedOriYData,InterpolatedOriZData,InterpolatedOriWData,InterpolatedAccXData,InterpolatedAccYData,InterpolatedAccZData,InterpolatedGyrXData,InterpolatedGyrYData,InterpolatedGyrZData,InterpolatedEmg1Data,InterpolatedEmg2Data,InterpolatedEmg3Data,InterpolatedEmg4Data,InterpolatedEmg5Data,InterpolatedEmg6Data,InterpolatedEmg7Data,InterpolatedEmg8Data);
     sensorNames = ["OriX","OriY","OriZ","OriW","AccX","AccY","AccZ","GyrX","GyrY","GyrZ","Emg1","Emg2","Emg3","Emg4","Emg5","Emg6","Emg7","Emg8"];
     
+    
     for i = 1:r
         frameEatStart = M(i,1);
         frameEatEnd = M(i,2);
 
         eatingHeader = strcat( 'EatingAction', num2str(i));   
         nonEatingHeader = strcat( 'NonEatingAction', num2str(i));
-
+        
         fprintf(featureMatrixEating, '%s,', eatingHeader );
+        row = NaN(1,18*(6)+1+2+2);
+        
         % for loop for eating action
         for p = 1:18
             fprintf(feat, '%s,', strcat(eatingHeader,sensorNames(p) ));
             fprintf(feat, '%f,', data(p,frameEatStart:frameEatEnd));
             fprintf(feat,"\n");
             
-            fprintf(featureMatrixEating, '%f,', mean(data(p,frameEatStart:frameEatEnd))); 
-            fprintf(featureMatrixEating, '%f,', max(data(p,frameEatStart:frameEatEnd)));
-            fprintf(featureMatrixEating, '%f,', std(data(p,frameEatStart:frameEatEnd)));
-            fprintf(featureMatrixEating, '%f,', rms(data(p,frameEatStart:frameEatEnd)));
+            r_mean= mean(data(p,frameEatStart:frameEatEnd));
+            r_max= max(data(p,frameEatStart:frameEatEnd));
+            r_std= std(data(p,frameEatStart:frameEatEnd));
+            r_rms= rms(data(p,frameEatStart:frameEatEnd));
             
             %fft
             % power is sum of squared coefficients
             %https://www.mathworks.com/matlabcentral/answers/159105-i-have-a-time-domain-signal-i-want-to-calculate-energy-of-my-signal
             fft_part = abs(fft(data(p,frameEatStart:frameEatEnd)));
-            pow = fft_part.*conj(fft_part)/(frameEatEnd-frameEatStart);
-            fprintf(featureMatrixEating, '%f,',sum(pow) );
-            
-            
+            pow1 = fft_part.*conj(fft_part)/(frameEatEnd-frameEatStart);
+            r_pow = sum(pow1);
             %entropy
             fft_part=abs(fft(data(p,frameEatStart:frameEatEnd)));
             P = fft_part.*conj(fft_part)/(frameEatEnd-frameEatStart);
@@ -165,32 +167,64 @@ for index =  1:row
 
             %Entropy Calculation
             logd = log2(d + 1e-12);
-            Entropy = -sum(d.*logd)/log2(length(d));
-            fprintf(featureMatrixEating, '%f,',Entropy );
+            r_Entropy = -sum(d.*logd)/log2(length(d));
+            
+            fprintf(featureMatrixEating, '%f,', r_mean); 
+            fprintf(featureMatrixEating, '%f,', r_max);
+            fprintf(featureMatrixEating, '%f,', r_std);
+            fprintf(featureMatrixEating, '%f,', r_rms);
+            fprintf(featureMatrixEating, '%f,', r_pow);            
+            fprintf(featureMatrixEating, '%f,', r_Entropy );
+            
+            row(1,(p-1)*6+1) = r_mean;
+            row(1,(p-1)*6+2) = r_max;
+            row(1,(p-1)*6+3) = r_std;
+            row(1,(p-1)*6+4) = r_rms;
+            row(1,(p-1)*6+5) = r_pow;
+            row(1,(p-1)*6+6) = r_Entropy;
             
         end
         fprintf(featureMatrixEating,"\n");
         
-       
+        %label (Eating or Non-Eating)
+        r_label = 1;
+        row(1,18*6+1) = r_label;
         
+        % timestamp
+        r_timestamp = fileNames(index);
+        row(1,18*6+2) = r_timestamp;
+        % group number
+        [x,y]=find(group_id_mapping(:,2) == r_timestamp);
+        row(1,18*6+3) = group_id_mapping(x,1);
+        row(1,18*6+4) = frameEatStart;
+        row(1,18*6+5) = frameEatEnd;
+        
+        Matrix=[Matrix;row];
+
         % for loop for non eating action
+        row = NaN(1,18*(6)+1+2+2);
         
+        % for loop for Non eating action
         for p = 1:18
             fprintf(feat, '%s,', strcat(nonEatingHeader,sensorNames(p) ));
-            fprintf(fnoneat, '%f,', data(p,notEatStart:frameEatStart));
-            fprintf(fnoneat,"\n");
-        
-            fprintf(featureMatrixNonEating, '%f,', mean(data(p,notEatStart:frameEatStart) ) );
-            fprintf(featureMatrixNonEating, '%f,', max(data(p,notEatStart:frameEatStart) ) );
-            fprintf(featureMatrixNonEating, '%f,', std(data(p,notEatStart:frameEatStart) ) );
-            fprintf(featureMatrixNonEating, '%f,', rms(data(p,notEatStart:frameEatStart) ) );
+            fprintf(fnoneat, '%f,', data(p,notEatStart:frameEatStart));	            
+            fprintf(feat,"\n");		
+			fprintf(fnoneat,"\n");
             
-            fft_part = abs(fft(data(p,notEatStart:frameEatStart)));
-            pow = fft_part.*conj(fft_part)/(frameEatEnd-frameEatStart);
-            fprintf(featureMatrixNonEating, '%f,', sum(pow));
+            r_mean = mean(data(p, notEatStart:frameEatStart));
+            r_max  = max(data(p, notEatStart:frameEatStart));
+            r_std  = std(data(p, notEatStart:frameEatStart));
+            r_rms  = rms(data(p, notEatStart:frameEatStart));
             
-            fft_part=abs(fft(data(p,notEatStart:frameEatStart)));
-            P = fft_part.*conj(fft_part)/(notEatStart-frameEatStart);
+            %fft
+            % power is sum of squared coefficients
+            %https://www.mathworks.com/matlabcentral/answers/159105-i-have-a-time-domain-signal-i-want-to-calculate-energy-of-my-signal
+            fft_part = abs(fft(data(p, notEatStart:frameEatStart)));
+            pow1 = fft_part.*conj(fft_part)/(frameEatStart-notEatStart);
+            r_pow = sum(pow1);
+            %entropy
+            fft_part=abs(fft(data(p, notEatStart:frameEatStart)));
+            P = fft_part.*conj(fft_part)/(frameEatStart-notEatStart);
             %Normalization
             d=P(:);
             %disp(d);
@@ -198,13 +232,42 @@ for index =  1:row
 
             %Entropy Calculation
             logd = log2(d + 1e-12);
-            Entropy = -sum(d.*logd)/log2(length(d));
-            fprintf(featureMatrixNonEating, '%f,', Entropy);
+            r_Entropy = -sum(d.*logd)/log2(length(d));
+            
+            
+            %label (Eating or Non-Eating)
+            r_label = 0;
+            
+            fprintf(featureMatrixNonEating, '%f,', r_mean); 
+            fprintf(featureMatrixNonEating, '%f,', r_max);
+            fprintf(featureMatrixNonEating, '%f,', r_std);
+            fprintf(featureMatrixNonEating, '%f,', r_rms);
+            fprintf(featureMatrixNonEating, '%f,', r_pow);            
+            fprintf(featureMatrixNonEating, '%f,', r_Entropy );
+            
+            row(1,(p-1)*6+1) = r_mean;
+            row(1,(p-1)*6+2) = r_max;
+            row(1,(p-1)*6+3) = r_std;
+            row(1,(p-1)*6+4) = r_rms;
+            row(1,(p-1)*6+5) = r_pow;
+            row(1,(p-1)*6+6) = r_Entropy;
             
         end
         fprintf(featureMatrixNonEating,"\n");
+        % timestamp
+        r_timestamp = fileNames(index);
+        row(1,18*6+1) = r_label;
+        row(1,18*6+2) = r_timestamp;
+        
+        % group number
+        [x,y]=find(group_id_mapping(:,2) == r_timestamp);
+        row(1,18*6+3) = group_id_mapping(x,1);
+        
+        row(1,18*6+4) = notEatStart;
+        row(1,18*6+5) = frameEatStart;
+        
+        Matrix=[Matrix;row];
         notEatStart = frameEatEnd;
-
     end
 
     fclose(feat) ;
@@ -213,3 +276,4 @@ for index =  1:row
     fclose(featureMatrixNonEating);
 
 end
+save('data/FeatureMatrix.mat','Matrix');
